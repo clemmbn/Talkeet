@@ -1,3 +1,17 @@
+"""
+tests/test_silence.py — Unit and integration tests for silence detection.
+
+Responsibilities:
+  - Unit tests: verify stderr parsing and segment-building logic in isolation
+    by mocking subprocess.run (no real video or ffmpeg needed).
+  - Integration tests: run the full POST /analyze/silence pipeline against a
+    real video file; skipped unless the TEST_VIDEO env var is set.
+
+Constraints:
+  - Unit tests must pass without any external dependencies (ffmpeg, video file).
+  - Integration tests rely on FFMPEG_PATH being set in the environment.
+"""
+
 import math
 import os
 from unittest.mock import MagicMock, patch
@@ -8,13 +22,15 @@ from fastapi.testclient import TestClient
 from app.main import app
 from app.services.silence import build_segments, detect_silences
 
+# Path to a real video file for integration tests; skip those tests if absent.
 TEST_VIDEO = os.environ.get("TEST_VIDEO")
 requires_video = pytest.mark.skipif(not TEST_VIDEO, reason="TEST_VIDEO not set")
 
 # ---------------------------------------------------------------------------
-# Unit tests — silence detection parsing
+# Fixtures and helpers
 # ---------------------------------------------------------------------------
 
+# Canonical ffmpeg stderr with two complete silence intervals.
 CANNED_STDERR = """\
 [silencedetect @ 0x...] silence_start: 0.500000
 [silencedetect @ 0x...] silence_end: 1.200000 | silence_duration: 0.700000
@@ -22,20 +38,34 @@ CANNED_STDERR = """\
 [silencedetect @ 0x...] silence_end: 3.800000 | silence_duration: 0.800000
 """
 
+# Stderr where the file ends while still silent (no silence_end line).
 TRAILING_STDERR = """\
 [silencedetect @ 0x...] silence_start: 2.000000
 """
 
 
 def _mock_run_detect(stderr: str):
+    """Return a MagicMock that mimics a successful subprocess.run result.
+
+    Args:
+        stderr: The stderr string the mock should expose.
+
+    Returns:
+        MagicMock with returncode=0 and stderr set to the given string.
+    """
     mock = MagicMock()
     mock.returncode = 0
     mock.stderr = stderr
     return mock
 
 
+# ---------------------------------------------------------------------------
+# Unit tests — silence detection parsing
+# ---------------------------------------------------------------------------
+
 @patch("app.services.silence.subprocess.run")
 def test_detect_silences_parses_stderr(mock_run):
+    """detect_silences correctly parses two complete silence intervals."""
     mock_run.return_value = _mock_run_detect(CANNED_STDERR)
     result = detect_silences("/fake.wav", -25.0, 0.3, "/usr/bin/ffmpeg")
     assert result == [(0.5, 1.2), (3.0, 3.8)]
@@ -43,6 +73,7 @@ def test_detect_silences_parses_stderr(mock_run):
 
 @patch("app.services.silence.subprocess.run")
 def test_detect_silences_trailing_open(mock_run):
+    """detect_silences handles a trailing silence with no silence_end as (start, inf)."""
     mock_run.return_value = _mock_run_detect(TRAILING_STDERR)
     result = detect_silences("/fake.wav", -25.0, 0.3, "/usr/bin/ffmpeg")
     assert len(result) == 1
@@ -56,6 +87,7 @@ def test_detect_silences_trailing_open(mock_run):
 # ---------------------------------------------------------------------------
 
 def test_build_segments_covers_full_duration():
+    """Segments are contiguous, start at 0, and end exactly at audio_duration."""
     silences = [(1.0, 2.0), (4.0, 5.0)]
     duration = 6.0
     segments = build_segments(silences, duration, pre_padding=0.0, post_padding=0.0, fps=30.0)
@@ -63,13 +95,14 @@ def test_build_segments_covers_full_duration():
     assert segments[0]["start"] == pytest.approx(0.0)
     assert segments[-1]["end"] == pytest.approx(duration)
 
-    # No gaps
+    # Verify no gaps between consecutive segments.
     for i in range(len(segments) - 1):
         assert segments[i]["end"] == pytest.approx(segments[i + 1]["start"])
 
 
 def test_build_segments_pre_post_padding():
-    # Single speech interval from 1.0 to 3.0, with asymmetric padding
+    """pre_padding expands toward the start, post_padding toward the end, independently."""
+    # Single speech interval 1.0–3.0 bracketed by silence on both sides.
     silences = [(0.0, 1.0), (3.0, 5.0)]
     duration = 5.0
     segments = build_segments(
@@ -86,10 +119,10 @@ def test_build_segments_pre_post_padding():
 
 
 def test_build_segments_drops_short_segments():
+    """Speech intervals shorter than 5 frames are excluded from the output."""
     fps = 30.0
-    min_dur = 5 / fps  # ~0.1667 s
 
-    # Speech interval of only 2 frames — should be dropped
+    # Construct a speech interval of exactly 2 frames (below the 5-frame threshold).
     short_speech_dur = 2 / fps
     silence_end = 1.0
     speech_end = silence_end + short_speech_dur
@@ -103,17 +136,19 @@ def test_build_segments_drops_short_segments():
 
 
 # ---------------------------------------------------------------------------
-# Integration tests
+# Integration tests (require TEST_VIDEO env var)
 # ---------------------------------------------------------------------------
 
 @pytest.fixture(scope="module")
 def client():
+    """TestClient wrapping the FastAPI app for the duration of this module."""
     with TestClient(app) as c:
         yield c
 
 
 @requires_video
 def test_analyze_silence_returns_200(client):
+    """Full pipeline returns HTTP 200 and a non-empty segment list."""
     resp = client.post("/analyze/silence", json={"file_path": TEST_VIDEO})
     assert resp.status_code == 200
     data = resp.json()
@@ -123,6 +158,7 @@ def test_analyze_silence_returns_200(client):
 
 @requires_video
 def test_analyze_silence_segments_contiguous(client):
+    """Each segment's end equals the next segment's start (no gaps or overlaps)."""
     resp = client.post("/analyze/silence", json={"file_path": TEST_VIDEO})
     segments = resp.json()
     for i in range(len(segments) - 1):
@@ -131,6 +167,7 @@ def test_analyze_silence_segments_contiguous(client):
 
 @requires_video
 def test_analyze_silence_covers_duration(client):
+    """Segments start at 0 and the last segment ends at the file duration."""
     resp = client.post("/analyze/silence", json={"file_path": TEST_VIDEO})
     segments = resp.json()
     assert segments[0]["start"] == pytest.approx(0.0, abs=1e-3)

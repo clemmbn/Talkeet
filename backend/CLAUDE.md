@@ -152,7 +152,7 @@ Resolve `ffmpeg_path` at app startup (lifespan), not at import time, so missing 
 [project]
 name = "talkeet-backend"
 version = "0.1.0"
-requires-python = ">=3.14"
+requires-python = ">=3.14" # Version 3.14 is already available
 dependencies = [
     "fastapi>=0.115",
     "uvicorn[standard]>=0.30",
@@ -163,7 +163,7 @@ dependencies = [
 transcription = [
     "torch",
     "torchaudio",
-    "whisperx @ git+https://github.com/m-bain/whisperX.git",
+    "whisperx",
 ]
 dev = [
     "pytest>=8.0",
@@ -177,19 +177,16 @@ package = false
 testpaths = ["tests"]
 ```
 
-Install base dependencies:
+> **Note:** `whisperx` resolves from PyPI. The transcription group introduces conflicting torch index sources that prevent lock-file generation alongside the base deps. Always install it in isolation:
+
+Install base + dev dependencies (Milestone 1):
 ```bash
-uv sync
+uv sync --no-group transcription --group dev
 ```
 
-Install transcription dependencies (Milestone 2+):
+Install transcription dependencies (Milestone 2+, run separately):
 ```bash
 uv sync --group transcription
-```
-
-Install dev dependencies:
-```bash
-uv sync --group dev
 ```
 
 ---
@@ -198,7 +195,7 @@ uv sync --group dev
 
 ```bash
 cd backend
-uv sync --group dev
+uv sync --no-group transcription --group dev
 FFMPEG_PATH=$(which ffmpeg) uv run uvicorn app.main:app --port 8742 --reload
 ```
 
