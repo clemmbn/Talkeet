@@ -5,6 +5,7 @@ Responsibilities:
   - Define the FastAPI app instance with a lifespan context that resolves and
     stores the ffmpeg path on startup.
   - Mount the analyze router (POST /analyze/silence).
+  - Mount the transcribe router (POST /transcribe, WS /ws/progress/{job_id}).
   - Expose GET /health for the SwiftUI layer to poll readiness on startup.
 
 Constraints:
@@ -19,7 +20,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from app.config import resolve_ffmpeg
-from app.routers import analyze
+from app.routers import analyze, transcribe
 
 logger = logging.getLogger(__name__)
 
@@ -51,6 +52,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Talkeet Backend", lifespan=lifespan)
 app.include_router(analyze.router)
+app.include_router(transcribe.router)
 
 
 @app.get("/health")
