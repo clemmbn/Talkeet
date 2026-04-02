@@ -78,6 +78,56 @@ Response: a JSON array of contiguous segments covering the full file duration:
 
 ---
 
+## Transcription
+
+Install the transcription dependency group first (separate step — torch conflicts with the base lockfile):
+
+```bash
+uv sync --group transcription
+```
+
+Then open a WebSocket connection for progress events, and call `POST /transcribe`:
+
+```bash
+# Terminal 1 — listen for progress
+websocat ws://localhost:8742/ws/progress/my-job-1
+
+# Terminal 2 — start transcription
+curl -s -X POST http://localhost:8742/transcribe \
+  -H "Content-Type: application/json" \
+  -d '{
+    "file_path": "/absolute/path/to/video.mp4",
+    "job_id": "my-job-1",
+    "model_size": "base"
+  }'
+```
+
+The WebSocket receives stage events in order, ending with a `"done"` frame containing the word array:
+
+```json
+{"stage": "loading_audio"}
+{"stage": "downloading_model"}
+{"stage": "transcribing"}
+{"stage": "aligning"}
+{"stage": "done", "result": [{"word": "hello", "start": 0.12, "end": 0.45, "speaker": null}]}
+```
+
+### Model sizes and RAM requirements
+
+| Model | RAM (CPU) | Speed | Notes |
+|-------|-----------|-------|-------|
+| `tiny` | ~1 GB | Very fast | Low accuracy |
+| `base` | ~1 GB | Fast | **Default — good balance** |
+| `small` | ~2 GB | Moderate | Better accuracy |
+| `medium` | ~5 GB | Slow | High accuracy |
+| `large-v2` | ~10 GB | Very slow | Best quality |
+| `large-v3` | ~10 GB | Very slow | Latest, best quality |
+| `large-v3-turbo` | ~6 GB | Slow | Fastest large model |
+
+**Apple Silicon constraint:** always `device="cpu"`. MPS is not supported by CTranslate2. Models are cached in `~/Library/Application Support/Talkeet/models/` after first download.
+
+---
+
 ## Run Tests
 
 Unit tests run without a real video file:
