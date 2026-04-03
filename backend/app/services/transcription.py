@@ -13,6 +13,9 @@ Constraints:
   - whisperx is an optional dependency (transcription group). Import errors are
     surfaced at call time, not at module load, so the base server can start without
     the transcription group installed.
+  - Pinned to torch==2.8.0 / torchaudio==2.8.0 / whisperx==3.8.4 / pyannote-audio==4.0.4.
+    These are the only versions known to work together without compatibility shims.
+    Do not upgrade these without re-validating the full pipeline end-to-end.
 """
 
 from pathlib import Path
@@ -126,11 +129,16 @@ def transcribe_video(
     # Flatten word_segments into a uniform list.
     # Use .get() for timestamps — alignment may fail to place individual words,
     # leaving "start"/"end" absent from the dict rather than set to None.
+    # Cast to plain float — whisperx returns np.float64, which FastAPI's JSON
+    # encoder cannot serialize.
+    def _to_float(v):
+        return float(v) if v is not None else None
+
     words = [
         {
             "word": w["word"],
-            "start": w.get("start"),    # None if alignment could not place this word
-            "end": w.get("end"),
+            "start": _to_float(w.get("start")),
+            "end": _to_float(w.get("end")),
             "speaker": w.get("speaker"),  # None — diarization is out of scope for M2
         }
         for w in result["word_segments"]
