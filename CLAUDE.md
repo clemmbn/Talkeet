@@ -44,7 +44,7 @@ The project is split into two independent layers that communicate over localhost
 
 | Layer                  | Technology                      |
 | ------------------------ | --------------------------------- |
-| Backend language       | Python 3.14+                    |
+| Backend language       | Python 3.11+                    |
 | Backend framework      | FastAPI + Uvicorn               |
 | Audio/video processing | ffmpeg (subprocess, bundled binary) |
 | Transcription          | WhisperX (local)                |
@@ -108,7 +108,7 @@ See `milestones/` for individual specs:
 - **ffmpeg usage:** called via `subprocess` directly (no ffmpeg-python wrapper); reference implementation in `backend/resources/video_to_edl.py`
 - **Silence detection:** uses ffmpeg's `silencedetect` filter; pre-cut and post-cut padding are separate parameters applied asymmetrically around speech intervals
 - **WhisperX device:** always `"cpu"` on Apple Silicon — MPS is not supported by CTranslate2; use `compute_type="int8"` for best CPU performance
-- **WebSocket progress events:** simple stage strings — `"downloading_model"` → `"transcribing"` → `"aligning"` → `"done"` (or `"error"`)
+- **WebSocket progress events:** simple stage strings — `"loading_audio"` → `"downloading_model"` → `"transcribing"` → `"aligning"` → `"done"` (or `"error"`)
 - **Backend Python structure:** package layout with `app/routers/` and `app/services/`; managed with `uv`
 - **No cloud processing:** all inference runs locally; no API keys required
 - **Backend port:** fixed at `localhost:8742` (unlikely to conflict); configurable via environment variable if needed

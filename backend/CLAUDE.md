@@ -46,7 +46,7 @@ backend/
 └── README.md
 ```
 
-Files tagged `[M2]`, `[M3]`, `[M4]` do not exist yet — they are created when that milestone starts.
+Files tagged `[M3]`, `[M4]` do not exist yet — they are created when that milestone starts.
 
 ---
 
@@ -54,8 +54,8 @@ Files tagged `[M2]`, `[M3]`, `[M4]` do not exist yet — they are created when t
 
 - **ffmpeg:** Never use `shutil.which("ffmpeg")` in production. Resolve via `FFMPEG_PATH` env var first, then `../Resources/ffmpeg` relative to `sys.executable`. Full implementation in `../milestones/01-backend-scaffold.md`.
 - **Port:** Fixed at `localhost:8742`. Configurable via `TALKEET_PORT` env var.
-- **Python:** 3.14+
-- **Dependency groups:** Install `base + dev` for all milestones. The `transcription` group (M2) must be installed separately — it introduces conflicting torch index sources.
+- **Python:** 3.11+ (pinned to 3.11 in `.python-version` — required for ML dep compatibility)
+- **Dependency groups:** Install `base + dev` for all milestones. The `transcription` group (M2) must be installed separately — it pins specific ML versions (torch==2.8.0, torchaudio==2.8.0, whisperx==3.8.4) that must not be mixed with the base lockfile.
 - **No cloud APIs:** All inference runs locally; no API keys.
 
 ---

@@ -60,7 +60,7 @@ backend/
 [project]
 name = "talkeet-backend"
 version = "0.1.0"
-requires-python = ">=3.14"
+requires-python = ">=3.11"
 dependencies = [
     "fastapi>=0.115",
     "uvicorn[standard]>=0.30",
@@ -69,9 +69,9 @@ dependencies = [
 
 [dependency-groups]
 transcription = [
-    "torch",
-    "torchaudio",
-    "whisperx",
+    "torch==2.8.0",
+    "torchaudio==2.8.0",
+    "whisperx==3.8.4",
 ]
 dev = [
     "pytest>=8.0",
@@ -85,7 +85,7 @@ package = false
 testpaths = ["tests"]
 ```
 
-> **Note:** The `transcription` group introduces conflicting torch index sources — always install it in isolation from the base deps. Never run `uv sync --group transcription` alongside a lock that includes base deps.
+> **Note:** The `transcription` group pins specific ML versions for compatibility (torch 2.8.0 + torchaudio 2.8.0 + whisperx 3.8.4 + pyannote-audio 4.0.4 are the only combination verified to work without shims). Always install it separately: `uv sync --group transcription`.
 
 ---
 

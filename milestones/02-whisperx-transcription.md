@@ -18,14 +18,14 @@
 
 ## Setup
 
-The transcription group must be installed separately — it introduces conflicting torch index sources that break the base lockfile. Run once before starting this milestone:
+The transcription group must be installed separately — it pins specific ML versions (torch==2.8.0, torchaudio==2.8.0, whisperx==3.8.4) that must resolve independently from the base lockfile. Run once before starting this milestone:
 
 ```bash
 cd backend
 uv sync --group transcription
 ```
 
-> The base deps (`fastapi`, `uvicorn`, `pydantic-settings`) stay installed. This adds `torch`, `torchaudio`, and `whisperx` on top.
+> The base deps (`fastapi`, `uvicorn`, `pydantic-settings`) stay installed. This adds pinned versions of `torch`, `torchaudio`, `whisperx`, and their transitive deps (including `pyannote-audio==4.0.4`) on top.
 
 Full API reference for WhisperX: `backend/resources/whisperx.md`.
 
