@@ -4,7 +4,7 @@
 
 This is the Python/FastAPI backend for Talkeet, a native macOS video editor. It handles all heavy processing (silence detection, waveform extraction, transcription, export) and exposes a REST + WebSocket API consumed by the SwiftUI frontend over `localhost:8742`.
 
-**Current milestone: Milestone 3 — Waveform extraction endpoint.**
+**Current milestone: Milestone 5 — SwiftUI app scaffold + backend lifecycle management.**
 All other milestones must not be implemented until explicitly requested.
 
 ### Workflow for each milestone
@@ -46,7 +46,7 @@ backend/
 └── README.md
 ```
 
-Files tagged `[M3]`, `[M4]` do not exist yet — they are created when that milestone starts.
+Files tagged `[M4]` do not exist yet — they are created when that milestone starts.
 
 ---
 
@@ -57,6 +57,7 @@ Files tagged `[M3]`, `[M4]` do not exist yet — they are created when that mile
 - **Python:** 3.11+ (pinned to 3.11 in `.python-version` — required for ML dep compatibility)
 - **Dependency groups:** Install `base + dev` for all milestones. The `transcription` group (M2) must be installed separately — it pins specific ML versions (torch==2.8.0, torchaudio==2.8.0, whisperx==3.8.4) that must not be mixed with the base lockfile.
 - **No cloud APIs:** All inference runs locally; no API keys.
+- **Waveform array semantics:** The `num_samples` array returned by `/analyze/waveform` uses bucket indices, not seconds. Mapping: `time = (index / num_samples) × duration`. The SwiftUI frontend (M7) fetches once at high resolution (~8000–10000 samples) and slices client-side during zoom/pan — no re-fetching during gestures. The endpoint does not currently support `start_time`/`end_time` range parameters; add them in M7 only if the single high-res fetch proves insufficient.
 
 ---
 
@@ -92,5 +93,5 @@ Integration tests that require a real video file are skipped unless `TEST_VIDEO=
 |-----------|-------------|--------|------|
 | 1 — Silence detection | `POST /analyze/silence`, `GET /health` | ✅ Complete | `../milestones/01-backend-scaffold.md` |
 | 2 — Transcription | `POST /transcribe`, `WS /ws/progress/{job_id}` | ✅ Complete | `../milestones/02-whisperx-transcription.md` |
-| 3 — Waveform | `POST /analyze/waveform` | ⬜ Pending | `../milestones/03-waveform-extraction.md` |
-| 4 — Export | `POST /export/edl`, `/export/fcpxml`, `/export/premiere`, `/export/srt` | ⬜ Pending | `../milestones/04-export-endpoints.md` |
+| 3 — Waveform | `POST /analyze/waveform` | ✅ Complete | `../milestones/03-waveform-extraction.md` |
+| 4 — Export | `POST /export/edl`, `/export/fcpxml`, `/export/premiere`, `/export/srt` | ✅ Complete | `../milestones/04-export-endpoints.md` |

@@ -4,8 +4,9 @@ app/main.py — FastAPI application entry point.
 Responsibilities:
   - Define the FastAPI app instance with a lifespan context that resolves and
     stores the ffmpeg path on startup.
-  - Mount the analyze router (POST /analyze/silence).
+  - Mount the analyze router (POST /analyze/silence, POST /analyze/waveform).
   - Mount the transcribe router (POST /transcribe, WS /ws/progress/{job_id}).
+  - Mount the export router (POST /export/edl, /export/fcpxml, /export/premiere, /export/srt).
   - Expose GET /health for the SwiftUI layer to poll readiness on startup.
 
 Constraints:
@@ -20,7 +21,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from app.config import resolve_ffmpeg
-from app.routers import analyze, transcribe
+from app.routers import analyze, export, transcribe
 
 logger = logging.getLogger(__name__)
 
@@ -53,6 +54,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="Talkeet Backend", lifespan=lifespan)
 app.include_router(analyze.router)
 app.include_router(transcribe.router)
+app.include_router(export.router)
 
 
 @app.get("/health")
