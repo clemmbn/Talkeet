@@ -34,11 +34,11 @@ SAMPLE_SEGMENTS = [
 ]
 
 SAMPLE_WORDS = [
-    {"word": "Hello", "start": 1.3, "end": 1.6, "speaker": None},
-    {"word": "world", "start": 1.7, "end": 2.0, "speaker": None},
-    {"word": "how",   "start": 5.1, "end": 5.4, "speaker": None},
-    {"word": "are",   "start": 5.5, "end": 5.7, "speaker": None},
-    {"word": "you",   "start": 5.8, "end": 6.0, "speaker": None},
+    {"word": "Hello", "start": 1.3, "end": 1.6},
+    {"word": "world", "start": 1.7, "end": 2.0},
+    {"word": "how",   "start": 5.1, "end": 5.4},
+    {"word": "are",   "start": 5.5, "end": 5.7},
+    {"word": "you",   "start": 5.8, "end": 6.0},
 ]
 
 

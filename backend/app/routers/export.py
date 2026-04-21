@@ -54,16 +54,14 @@ class WordItem(BaseModel):
     """A single word from the WhisperX transcription pipeline.
 
     Attributes:
-        word:    The transcribed word string.
-        start:   Word start time in seconds, or None if alignment failed.
-        end:     Word end time in seconds, or None if alignment failed.
-        speaker: Speaker label from diarization, or None.
+        word:  The transcribed word string.
+        start: Word start time in seconds, or None if alignment failed.
+        end:   Word end time in seconds, or None if alignment failed.
     """
 
     word: str
     start: float | None = None
     end: float | None = None
-    speaker: str | None = None
 
 
 class ExportRequest(BaseModel):

@@ -5,12 +5,14 @@ Responsibilities:
   - POST /analyze/silence: accepts a video path and silence-detection
     parameters, runs the full pipeline (extract → detect → build), and returns
     a contiguous list of speech/silence segments covering the file duration.
+  - POST /analyze/waveform: accepts a video path and a sample count, extracts
+    RMS amplitude buckets normalized to [0.0, 1.0] for waveform rendering.
 
 Constraints:
   - ffmpeg path is read from app.state (set during lifespan) rather than
     resolved per-request to avoid redundant lookups.
-  - The temporary WAV file is always cleaned up in a finally block, even if
-    the pipeline raises an exception mid-flight.
+  - The temporary WAV file for silence detection is always cleaned up in a
+    finally block, even if the pipeline raises an exception mid-flight.
 """
 
 import os
@@ -26,6 +28,7 @@ from app.services.silence import (
     get_audio_duration,
     get_video_fps,
 )
+from app.services.waveform import extract_waveform
 
 router = APIRouter()
 
@@ -107,3 +110,57 @@ async def analyze_silence(req: SilenceRequest, request: Request):
             os.remove(wav_path)
 
     return segments
+
+
+class WaveformRequest(BaseModel):
+    """Request body for POST /analyze/waveform.
+
+    Attributes:
+        file_path: Absolute path to the source video file (.mp4 or .mov).
+        num_samples: Number of amplitude buckets to return (waveform resolution).
+            Higher values give more detail; lower values are faster to render.
+            Default 1000 is suitable for a full-width timeline view.
+    """
+
+    file_path: str
+    num_samples: int = 1000
+
+
+@router.post("/analyze/waveform")
+async def analyze_waveform(req: WaveformRequest, request: Request):
+    """Extract a normalized amplitude envelope from a video file.
+
+    Pipes raw PCM through ffmpeg, computes RMS per bucket, and returns a
+    list of floats in [0.0, 1.0] suitable for drawing a waveform in the UI.
+
+    Args:
+        req: Waveform request parameters (file path, desired sample count).
+        request: FastAPI request used to access app.state.ffmpeg_path.
+
+    Returns:
+        JSON array of `num_samples` floats, each in [0.0, 1.0].
+
+    Raises:
+        HTTPException 404: file_path does not exist on disk.
+        HTTPException 422: file extension is not .mp4 or .mov.
+        HTTPException 500: ffmpeg subprocess failure.
+    """
+    path = Path(req.file_path)
+
+    if not path.exists():
+        raise HTTPException(status_code=404, detail=f"File not found: {req.file_path}")
+
+    if path.suffix.lower() not in (".mp4", ".mov"):
+        raise HTTPException(
+            status_code=422,
+            detail=f"Unsupported file type: {path.suffix}",
+        )
+
+    ffmpeg_path: str = request.app.state.ffmpeg_path
+
+    try:
+        samples = extract_waveform(str(path), ffmpeg_path, req.num_samples)
+    except RuntimeError as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+
+    return samples

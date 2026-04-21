@@ -73,8 +73,7 @@ def transcribe_video(
                            the router for the asyncio bridge).
 
     Returns:
-        List of word dicts: [{"word": str, "start": float|None,
-                               "end": float|None, "speaker": str|None}].
+        List of word dicts: [{"word": str, "start": float|None, "end": float|None}].
         "start" and "end" are None when alignment could not place a word.
 
     Raises:
@@ -139,7 +138,6 @@ def transcribe_video(
             "word": w["word"],
             "start": _to_float(w.get("start")),
             "end": _to_float(w.get("end")),
-            "speaker": w.get("speaker"),  # None — diarization is out of scope for M2
         }
         for w in result["word_segments"]
     ]
