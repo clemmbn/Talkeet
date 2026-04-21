@@ -21,7 +21,7 @@
 Install base + dev dependencies:
 ```bash
 cd backend
-uv sync --no-group transcription --group dev
+uv sync --group dev
 ```
 
 Run the server:

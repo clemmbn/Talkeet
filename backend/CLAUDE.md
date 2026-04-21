@@ -65,7 +65,7 @@ Files tagged `[M4]` do not exist yet — they are created when that milestone st
 
 ```bash
 cd backend
-uv sync --no-group transcription --group dev
+uv sync --group dev
 FFMPEG_PATH=$(which ffmpeg) uv run uvicorn app.main:app --port 8742 --reload
 ```
 

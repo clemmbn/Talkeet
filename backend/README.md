@@ -22,10 +22,10 @@ brew install ffmpeg
 
 ```bash
 cd backend
-uv sync --no-group transcription --group dev
+uv sync --group dev
 ```
 
-The `transcription` group (torch, WhisperX) is excluded here — it is only needed for Milestone 2.
+The `transcription` group (torch, WhisperX) is not installed by default — it is only needed for Milestone 2.
 
 ---
 
