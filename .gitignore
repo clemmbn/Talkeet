@@ -15,24 +15,21 @@ wheels/
 # TextMate noise
 *.tm_build_errors
  
-# Xcode noise, after https://github.com/github/gitignore/blob/master/Objective-C.gitignore
-build/*
+# Build files
+build/
+DerivedData/
+
+# User settings
+*.xcuserstate
+*.xcuserdata
 *.pbxuser
-!default.pbxuser
-*.mode1v3
-!default.mode1v3
-*.mode2v3
-!default.mode2v3
-*.perspectivev3
-!default.perspectivev3
-*.xcworkspace
-!default.xcworkspace
-xcuserdata
-profile
+
+# Xcode workspace settings
+xcuserdata/
+*.xcworkspace/
+
 *.moved-aside
 *~.nib
-*.xcuserstate
-
 .*.sw*
 
 # Environment variables
