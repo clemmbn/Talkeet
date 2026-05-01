@@ -185,7 +185,7 @@ final class BackendManager {
     /// Sets `.ready` on success, `.error` on timeout or unexpected process exit.
     private func pollHealth() async {
         let startTime = Date()
-        log.debug("Health polling started (timeout \(Int(pollTimeout), privacy: .public)s)")
+        log.debug("Health polling started (timeout \(Int(self.pollTimeout), privacy: .public)s)")
 
         while !Task.isCancelled {
             // Timeout guard
